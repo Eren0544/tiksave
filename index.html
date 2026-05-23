@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TikSave — Téléchargeur TikTok</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070f;--s1:#0d0d1a;--s2:#131325;--brd:#1e1e38;
+  --pk:#ff2d55;--cy:#00deff;--gr:#00e87a;
+  --txt:#ededf5;--mut:#5a5a82;
+  --gp:rgba(255,45,85,.22);--gc:rgba(0,222,255,.16);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--brd);border-radius:99px}
+#bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--brd) 1px,transparent 1px),linear-gradient(90deg,var(--brd) 1px,transparent 1px);background-size:44px 44px;opacity:.3}
+#bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 55% 38% at 8% 12%,var(--gp),transparent),radial-gradient(ellipse 45% 32% at 92% 82%,var(--gc),transparent)}
+header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.8rem;border-bottom:1px solid var(--brd);background:rgba(7,7,15,.9);backdrop-filter:blur(16px)}
+.logo{display:flex;align-items:center;gap:.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.55rem;letter-spacing:2px}
+.logo-mark{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--pk),var(--cy));display:flex;align-items:center;justify-content:center;font-size:.75rem}
+.logo-t{color:var(--pk)}.logo-s{color:var(--cy)}
+.hbadge{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:2px;text-transform:uppercase;color:var(--cy);border:1px solid rgba(0,222,255,.3);padding:.18rem .65rem;border-radius:99px}
+.tabs{position:relative;z-index:10;display:flex;max-width:860px;margin:0 auto;padding:0 1.4rem;border-bottom:1px solid var(--brd)}
+.tab{background:none;border:none;color:var(--mut);font-family:'DM Sans',sans-serif;font-weight:700;font-size:.86rem;padding:.9rem 1.3rem;cursor:pointer;position:relative;transition:color .2s}
+.tab::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--pk);transform:scaleX(0);transition:transform .25s}
+.tab.on{color:var(--txt)}.tab.on::after{transform:scaleX(1)}.tab:hover{color:var(--txt)}
+.panel{display:none}.panel.on{display:block;animation:fadeUp .3s ease}
+.hero{position:relative;z-index:10;text-align:center;padding:3.2rem 1rem 2rem}
+.etag{display:inline-block;font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:3px;text-transform:uppercase;color:var(--cy);border:1px solid rgba(0,222,255,.28);padding:.2rem .8rem;border-radius:99px;margin-bottom:1rem}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,7vw,5.2rem);letter-spacing:3px;line-height:1;margin-bottom:.9rem}
+.hero h1 .pk{color:var(--pk)}
+.hero p{color:var(--mut);font-size:.95rem;max-width:400px;margin:0 auto 2.3rem;line-height:1.7}
+.izone{position:relative;z-index:10;max-width:640px;margin:0 auto 1rem;padding:0 1rem}
+.irow{display:flex;background:var(--s2);border:1px solid var(--brd);border-radius:12px;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.irow:focus-within{border-color:var(--pk);box-shadow:0 0 0 3px var(--gp)}
+.irow.cy:focus-within{border-color:var(--cy);box-shadow:0 0 0 3px var(--gc)}
+.i-at{padding:0 .8rem;display:flex;align-items:center;color:var(--cy);font-family:'DM Mono',monospace;font-size:.92rem;border-right:1px solid var(--brd);flex-shrink:0}
+.i-paste{background:none;border:none;border-right:1px solid var(--brd);color:var(--mut);padding:0 .8rem;cursor:pointer;font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:1px;text-transform:uppercase;transition:color .2s;flex-shrink:0}
+.i-paste:hover{color:var(--cy)}
+.i-txt{flex:1;background:none;border:none;outline:none;padding:.9rem .85rem;font-family:'DM Mono',monospace;font-size:.8rem;color:var(--txt);min-width:0}
+.i-txt::placeholder{color:var(--mut)}
+.i-btn{background:linear-gradient(135deg,var(--pk),#aa0030);border:none;color:#fff;padding:0 1.4rem;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;transition:opacity .2s,transform .15s;flex-shrink:0;white-space:nowrap}
+.i-btn:hover{opacity:.86;transform:scale(1.02)}.i-btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
+.i-btn.cy{background:linear-gradient(135deg,var(--cy),#0099bb);color:#07070f}
+.szone{position:relative;z-index:10;max-width:640px;margin:0 auto .7rem;padding:0 1rem}
+.smsg{display:flex;align-items:center;gap:.7rem;padding:.72rem .92rem;border-radius:9px;font-family:'DM Mono',monospace;font-size:.73rem;animation:fadeUp .22s ease}
+.smsg.L{background:rgba(0,222,255,.07);border:1px solid rgba(0,222,255,.2);color:var(--cy)}
+.smsg.S{background:rgba(0,232,122,.07);border:1px solid rgba(0,232,122,.2);color:var(--gr)}
+.smsg.E{background:rgba(255,45,85,.07);border:1px solid rgba(255,45,85,.2);color:var(--pk)}
+.spin{width:14px;height:14px;flex-shrink:0;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+.rcard{position:relative;z-index:10;max-width:640px;margin:0 auto 3rem;padding:0 1rem;animation:fadeUp .35s ease}
+.rinner{background:var(--s2);border:1px solid var(--brd);border-radius:14px;overflow:hidden}
+.rhead{display:flex;align-items:center;gap:.85rem;padding:1rem 1.15rem;border-bottom:1px solid var(--brd)}
+.rthumb{width:48px;height:48px;flex-shrink:0;border-radius:8px;object-fit:cover;background:var(--brd)}
+.rtit{font-size:.84rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.18rem}
+.raut{font-family:'DM Mono',monospace;font-size:.67rem;color:var(--cy)}
+.rdls{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--brd)}
+.rdl{background:var(--s2);border:none;padding:.88rem 1rem;cursor:pointer;text-align:left;display:flex;align-items:center;gap:.6rem;transition:background .16s;color:var(--txt)}
+.rdl:hover{background:var(--s1)}
+.di{width:33px;height:33px;flex-shrink:0;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.88rem}
+.rdl:nth-child(1) .di{background:rgba(255,45,85,.14)}.rdl:nth-child(2) .di{background:rgba(0,222,255,.11)}
+.rdl:nth-child(3) .di{background:rgba(255,201,64,.1)}.rdl:nth-child(4) .di{background:rgba(160,100,255,.11)}
+.dl{font-size:.79rem;font-weight:700}.ds{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut);margin-top:.07rem}
+.how{position:relative;z-index:10;max-width:740px;margin:0 auto 5rem;padding:0 1rem}
+.slbl{font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:3px;text-transform:uppercase;color:var(--mut);margin-bottom:1.1rem;display:flex;align-items:center;gap:.8rem}
+.slbl::after{content:'';flex:1;height:1px;background:var(--brd)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.8rem}
+.step{background:var(--s2);border:1px solid var(--brd);border-radius:12px;padding:1.1rem;position:relative;overflow:hidden;transition:border-color .25s,transform .2s}
+.step:hover{border-color:var(--pk);transform:translateY(-3px)}
+.step::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.step:nth-child(1)::before{background:var(--pk)}.step:nth-child(2)::before{background:var(--cy)}.step:nth-child(3)::before{background:#a78bfa}
+.sn{font-family:'Bebas Neue',sans-serif;font-size:2.3rem;color:var(--brd);line-height:1;margin-bottom:.3rem}
+.si{font-size:1.35rem;margin-bottom:.32rem}.step h3{font-size:.86rem;font-weight:700;margin-bottom:.32rem}.step p{font-size:.75rem;color:var(--mut);line-height:1.6}
+.pzone{position:relative;z-index:10;max-width:880px;margin:0 auto;padding:1.2rem 1rem 5rem}
+.pcard{background:var(--s2);border:1px solid var(--brd);border-radius:14px;padding:1.2rem;margin-bottom:1.6rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;animation:fadeUp .3s ease}
+.pav{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--pk);flex-shrink:0;background:var(--brd)}
+.pav-ph{width:64px;height:64px;border-radius:50%;border:2px solid var(--pk);display:flex;align-items:center;justify-content:center;font-size:1.7rem;background:var(--s1);flex-shrink:0}
+.pname{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:1px;margin-bottom:.1rem}
+.phdl{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--cy);margin-bottom:.5rem}
+.psts{display:flex;gap:1.2rem;flex-wrap:wrap}.pst{text-align:center}.psv{font-weight:700;font-size:.92rem}.psl{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)}
+.glbl{font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:3px;text-transform:uppercase;color:var(--mut);margin-bottom:.9rem;display:flex;align-items:center;gap:.7rem}
+.glbl::after{content:'';flex:1;height:1px;background:var(--brd)}
+.gpill{background:var(--pk);color:#fff;font-size:.57rem;padding:.12rem .45rem;border-radius:99px}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:.65rem}
+.vtile{background:var(--s2);border:1px solid var(--brd);border-radius:11px;overflow:hidden;cursor:pointer;position:relative;transition:border-color .2s,transform .2s,box-shadow .2s}
+.vtile:hover{border-color:var(--pk);transform:translateY(-4px);box-shadow:0 10px 28px rgba(255,45,85,.2)}
+.vthw{position:relative;width:100%;aspect-ratio:9/16;overflow:hidden;background:var(--s1)}
+.vth{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}.vtile:hover .vth{transform:scale(1.06)}
+.vplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);opacity:0;transition:opacity .2s}.vtile:hover .vplay{opacity:1}
+.vplayc{width:40px;height:40px;background:var(--pk);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.88rem;padding-left:3px}
+.vdur{position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.72);color:#fff;font-family:'DM Mono',monospace;font-size:.55rem;padding:1px 5px;border-radius:3px}
+.vinfo{padding:.48rem .58rem}
+.vtit{font-size:.71rem;font-weight:700;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4;margin-bottom:.22rem;color:var(--txt)}
+.vmeta{display:flex;gap:.5rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)}
+.skgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:.65rem}
+.sktile{background:var(--s2);border:1px solid var(--brd);border-radius:11px;overflow:hidden}
+.skth{width:100%;aspect-ratio:9/16;background:linear-gradient(90deg,var(--s2) 25%,var(--brd) 50%,var(--s2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+.skb{padding:.48rem .58rem}.skl{height:8px;border-radius:3px;margin-bottom:5px;background:linear-gradient(90deg,var(--s2) 25%,var(--brd) 50%,var(--s2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}.skl.s{width:52%}
+.lmore{display:flex;justify-content:center;margin-top:1.4rem}
+.lbtn{background:var(--s2);border:1px solid var(--brd);color:var(--txt);padding:.68rem 2rem;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.86rem;border-radius:10px;cursor:pointer;transition:border-color .2s,background .2s}
+.lbtn:hover{border-color:var(--cy);background:var(--s1)}.lbtn:disabled{opacity:.4;cursor:not-allowed}
+.empty{grid-column:1/-1;text-align:center;padding:3rem 1rem;color:var(--mut);font-family:'DM Mono',monospace;font-size:.78rem}
+.empty .ei{font-size:2.2rem;margin-bottom:.65rem}
+.mdrop{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);backdrop-filter:blur(9px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:fadeIn .2s ease}
+.mbox{background:var(--s2);border:1px solid var(--brd);border-radius:16px;overflow:hidden;max-width:450px;width:100%;animation:slideUp .27s ease}
+.mhd{display:flex;align-items:center;gap:.85rem;padding:1.05rem 1.15rem;border-bottom:1px solid var(--brd);position:relative}
+.mth{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--brd)}
+.mtit{font-size:.84rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.16rem}
+.maut{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--cy)}
+.mcls{position:absolute;top:.85rem;right:.85rem;background:var(--s1);border:1px solid var(--brd);color:var(--mut);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:color .18s}
+.mcls:hover{color:var(--txt)}
+.mdls{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--brd)}
+.mdl{background:var(--s2);border:none;padding:.9rem;cursor:pointer;text-align:left;display:flex;align-items:center;gap:.62rem;transition:background .16s;color:var(--txt)}
+.mdl:hover{background:var(--s1)}
+.mdi{width:33px;height:33px;flex-shrink:0;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.88rem}
+.mdl:nth-child(1) .mdi{background:rgba(255,45,85,.14)}.mdl:nth-child(2) .mdi{background:rgba(0,222,255,.11)}
+.mdl:nth-child(3) .mdi{background:rgba(255,201,64,.1)}.mdl:nth-child(4) .mdi{background:rgba(160,100,255,.11)}
+.mdll{font-size:.79rem;font-weight:700}.mdls2{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut);margin-top:.07rem}
+.msts{padding:.72rem 1.15rem;border-top:1px solid var(--brd);display:flex;gap:1rem;font-family:'DM Mono',monospace;font-size:.67rem;color:var(--mut);flex-wrap:wrap}
+.msts strong{color:var(--txt)}
+footer{position:relative;z-index:10;border-top:1px solid var(--brd);padding:1.1rem 1.8rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.7rem}
+footer p{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--mut)}
+.flinks{display:flex;gap:1.2rem}.flinks a{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--mut);text-decoration:none;transition:color .2s}.flinks a:hover{color:var(--cy)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{to{background-position:-200% 0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+</style>
+</head>
+<body>
+<div id="bg-grid"></div><div id="bg-glow"></div>
+<header>
+  <div class="logo"><div class="logo-mark">▶</div><span class="logo-t">Tik</span><span class="logo-s">Save</span></div>
+  <div class="hbadge">Gratuit · Sans filigrane</div>
+</header>
+<div class="tabs">
+  <button class="tab on" data-tab="single">🎬 Vidéo unique</button>
+  <button class="tab" data-tab="profile">👤 Par profil</button>
+</div>
+
+<!-- SINGLE -->
+<div class="panel on" id="panel-single">
+  <section class="hero">
+    <div class="etag">Lien direct</div>
+    <h1>TÉLÉCHARGE<br/><span class="pk">N'IMPORTE QUELLE</span><br/>VIDÉO TIKTOK</h1>
+    <p>Colle le lien d'une vidéo et télécharge-la en HD, sans filigrane.</p>
+  </section>
+  <div class="izone">
+    <div class="irow">
+      <button class="i-paste" id="pasteBtn">📋 Coller</button>
+      <input class="i-txt" id="urlInput" type="url" placeholder="https://www.tiktok.com/@user/video/..."/>
+      <button class="i-btn" id="dlBtn">Télécharger →</button>
+    </div>
+  </div>
+  <div class="szone" id="sStatus"></div>
+  <div id="rCard" style="display:none">
+    <div class="rcard"><div class="rinner">
+      <div class="rhead">
+        <img class="rthumb" id="rThumb" src="" alt=""/>
+        <div style="overflow:hidden;flex:1"><div class="rtit" id="rTitle"></div><div class="raut" id="rAuthor"></div></div>
+      </div>
+      <div class="rdls" id="rDls"></div>
+    </div></div>
+  </div>
+  <section class="how">
+    <div class="slbl">Comment ça marche</div>
+    <div class="steps">
+      <div class="step"><div class="sn">01</div><div class="si">📱</div><h3>Copie le lien</h3><p>Ouvre TikTok → Partager → Copier le lien.</p></div>
+      <div class="step"><div class="sn">02</div><div class="si">📋</div><h3>Colle l'URL</h3><p>Colle le lien ci-dessus et clique Télécharger.</p></div>
+      <div class="step"><div class="sn">03</div><div class="si">⬇️</div><h3>Choisis le format</h3><p>HD, SD, MP3 ou sans filigrane.</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- PROFILE -->
+<div class="panel" id="panel-profile">
+  <section class="hero" style="padding-bottom:1.4rem">
+    <div class="etag">Navigation par profil</div>
+    <h1 style="font-size:clamp(2rem,5vw,3.4rem)">TOUTES LES VIDÉOS<br/><span class="pk">D'UN PROFIL</span><br/>TIKTOK</h1>
+    <p>Entre un nom d'utilisateur et choisis les vidéos à télécharger.</p>
+  </section>
+  <div class="izone">
+    <div class="irow cy">
+      <span class="i-at">@</span>
+      <input class="i-txt" id="pInput" type="text" placeholder="nomutilisateur" autocomplete="off" spellcheck="false"/>
+      <button class="i-btn cy" id="pBtn">Charger →</button>
+    </div>
+  </div>
+  <div class="szone" id="pStatus"></div>
+  <div class="pzone">
+    <div id="pCard" style="display:none" class="pcard"></div>
+    <div id="skSection" style="display:none"><div class="glbl">Chargement…</div><div class="skgrid" id="skGrid"></div></div>
+    <div id="gSection" style="display:none">
+      <div class="glbl">Vidéos <span class="gpill" id="gCount">0</span></div>
+      <div class="vgrid" id="vGrid"></div>
+      <div class="lmore" id="lMore" style="display:none"><button class="lbtn" id="lBtn">Charger plus ↓</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal" style="display:none">
+  <div class="mdrop" id="mdrop">
+    <div class="mbox">
+      <div class="mhd">
+        <img class="mth" id="mThumb" src="" alt=""/>
+        <div style="flex:1;overflow:hidden"><div class="mtit" id="mTitle"></div><div class="maut" id="mAuthor"></div></div>
+        <button class="mcls" id="mClose">✕</button>
+      </div>
+      <div class="mdls" id="mDls"></div>
+      <div class="msts" id="mStats"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 TikSave</p>
+  <div class="flinks"><a href="#">Confidentialité</a><a href="#">CGU</a></div>
+</footer>
+
+<script>
+// ══ URL DU PROXY ══
+// En développement local (vercel dev) : laisser '/api/proxy'
+// Après déploiement sur Vercel : laisser '/api/proxy' (automatique)
+const PROXY = '/api/proxy';
+
+async function tikwm(path, params = {}) {
+  const qs = new URLSearchParams({ path, ...params }).toString();
+  const res = await fetch(`${PROXY}?${qs}`);
+  if (!res.ok) throw new Error('Erreur réseau ' + res.status);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+const fmt = n => { n=parseInt(n)||0; return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(n); };
+const fmtd = s => { s=parseInt(s)||0; return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); };
+const dlUrl = url => { if(url) window.open(url,'_blank'); };
+const $ = id => document.getElementById(id);
+
+function showSt(id, type, text, spin=false) {
+  $(id).innerHTML = `<div class="smsg ${type}">${spin?'<div class="spin"></div>':''}<span>${text}</span></div>`;
+}
+function clearSt(id) { $(id).innerHTML = ''; }
+
+// TABS
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); $('panel-'+t.dataset.tab).classList.add('on');
+}));
+
+// SINGLE
+$('pasteBtn').addEventListener('click', async () => {
+  try { $('urlInput').value = await navigator.clipboard.readText(); } catch { $('urlInput').focus(); }
+});
+$('dlBtn').addEventListener('click', fetchSingle);
+$('urlInput').addEventListener('keydown', e => { if(e.key==='Enter') fetchSingle(); });
+
+async function fetchSingle() {
+  const url = $('urlInput').value.trim();
+  if(!url){ showSt('sStatus','E','⚠️ Colle d\'abord un lien TikTok.'); return; }
+  if(!/tiktok\.com\/@[\w.]+\/video\/\d+|vm\.tiktok\.com\/\w+|vt\.tiktok\.com\/\w+/i.test(url)){
+    showSt('sStatus','E','⚠️ Lien TikTok invalide.'); return;
+  }
+  $('dlBtn').disabled=true; $('rCard').style.display='none';
+  showSt('sStatus','L','Récupération…',true);
+  try {
+    const data = await tikwm('/api/', { url });
+    if(data.code!==0||!data.data) throw new Error('Vidéo introuvable ou privée.');
+    const v=data.data;
+    $('rThumb').src=v.cover||''; $('rTitle').textContent=v.title||'Vidéo TikTok';
+    $('rAuthor').textContent='@'+(v.author?.unique_id||'utilisateur');
+    $('rDls').innerHTML=[
+      ['🎥','Vidéo HD','1080p · Avec son',v.play],
+      ['📱','Vidéo SD','720p · Léger',v.play],
+      ['🎵','Audio MP3','Son uniquement',v.music||v.play],
+      ['✨','Sans filigrane','HD · Propre',v.wmplay||v.play],
+    ].map(([ico,lbl,sub,lnk])=>`<button class="rdl" onclick="dlUrl('${lnk}')"><div class="di">${ico}</div><div><div class="dl">${lbl}</div><div class="ds">${sub}</div></div></button>`).join('');
+    $('rCard').style.display='block';
+    showSt('sStatus','S','✅ Vidéo trouvée ! Choisis un format.');
+  } catch(e){ showSt('sStatus','E','❌ '+e.message); }
+  finally { $('dlBtn').disabled=false; }
+}
+
+// PROFILE
+let pUser='',pCursor='',pLoaded=0,pHasMore=false,pBusy=false;
+$('pBtn').addEventListener('click', startProfile);
+$('pInput').addEventListener('keydown', e=>{ if(e.key==='Enter') startProfile(); });
+
+function showSkel(n=12){
+  $('skGrid').innerHTML=Array(n).fill(`<div class="sktile"><div class="skth"></div><div class="skb"><div class="skl"></div><div class="skl s"></div></div></div>`).join('');
+  $('skSection').style.display='block'; $('gSection').style.display='none';
+}
+function hideSkel(){ $('skSection').style.display='none'; }
+
+async function startProfile(){
+  const u=$('pInput').value.trim().replace(/^@/,'');
+  if(!u){ showSt('pStatus','E','⚠️ Entre un nom d\'utilisateur.'); return; }
+  pUser=u; pCursor=''; pLoaded=0; pHasMore=false;
+  $('vGrid').innerHTML=''; $('pCard').style.display='none';
+  $('gSection').style.display='none'; $('lMore').style.display='none';
+  $('pBtn').disabled=true;
+  showSt('pStatus','L',`Chargement de @${u}…`,true); showSkel(12);
+  try {
+    const info=await tikwm('/api/user/info',{unique_id:u});
+    if(info.code!==0||!info.data) throw new Error('Profil introuvable ou privé.');
+    const usr=info.data.user,sts=info.data.stats;
+    const card=$('pCard');
+    card.innerHTML=`
+      <img class="pav" src="${usr.avatarMedium||usr.avatarThumb||''}" alt="avatar" onerror="this.outerHTML='<div class=\\'pav-ph\\'>👤</div>'"/>
+      <div>
+        <div class="pname">${usr.nickname||u}</div>
+        <div class="phdl">@${usr.uniqueId||u}</div>
+        <div class="psts">
+          <div class="pst"><div class="psv">${fmt(sts?.videoCount)}</div><div class="psl">Vidéos</div></div>
+          <div class="pst"><div class="psv">${fmt(sts?.followerCount)}</div><div class="psl">Abonnés</div></div>
+          <div class="pst"><div class="psv">${fmt(sts?.heartCount)}</div><div class="psl">Likes</div></div>
+        </div>
+      </div>`;
+    card.style.display='flex';
+    await fetchVideos(u,'');
+    clearSt('pStatus');
+  } catch(e){ hideSkel(); showSt('pStatus','E','❌ '+e.message); }
+  finally { $('pBtn').disabled=false; }
+}
+
+async function fetchVideos(user,cursor){
+  const params={unique_id:user,count:'20'};
+  if(cursor) params.cursor=cursor;
+  const d=await tikwm('/api/user/posts',params);
+  hideSkel();
+  if(d.code!==0||!d.data) throw new Error('Impossible de charger les vidéos.');
+  const vids=d.data.videos||[];
+  pHasMore=!!d.data.hasMore; pCursor=d.data.cursor||'';
+  const grid=$('vGrid');
+  if(vids.length===0&&pLoaded===0){
+    grid.innerHTML='<div class="empty"><div class="ei">📭</div>Aucune vidéo publique trouvée.</div>';
+    $('gSection').style.display='block'; return;
+  }
+  vids.forEach(v=>{
+    const t=document.createElement('div'); t.className='vtile';
+    t.innerHTML=`
+      <div class="vthw">
+        <img class="vth" src="${v.cover||''}" alt="" loading="lazy"/>
+        <div class="vplay"><div class="vplayc">▶</div></div>
+        ${v.duration?`<div class="vdur">${fmtd(v.duration)}</div>`:''}
+      </div>
+      <div class="vinfo">
+        <div class="vtit">${(v.title||'Vidéo sans titre').replace(/</g,'&lt;')}</div>
+        <div class="vmeta"><span>❤️${fmt(v.digg_count)}</span><span>▶️${fmt(v.play_count)}</span></div>
+      </div>`;
+    t._v=v; t.addEventListener('click',()=>openModal(t._v)); grid.appendChild(t);
+  });
+  pLoaded+=vids.length; $('gCount').textContent=pLoaded;
+  $('gSection').style.display='block';
+  $('lMore').style.display=pHasMore?'flex':'none';
+  showSt('pStatus','S',`✅ ${pLoaded} vidéo(s) chargée(s).`);
+}
+
+$('lBtn').addEventListener('click', async()=>{
+  if(!pUser||!pHasMore||pBusy) return;
+  pBusy=true; const btn=$('lBtn'); btn.disabled=true; btn.textContent='Chargement…';
+  const grid=$('vGrid'); const msk=[];
+  for(let i=0;i<6;i++){const s=document.createElement('div');s.className='sktile';s.innerHTML='<div class="skth"></div><div class="skb"><div class="skl"></div><div class="skl s"></div></div>';grid.appendChild(s);msk.push(s);}
+  try{ await fetchVideos(pUser,pCursor); }
+  catch(e){ showSt('pStatus','E','❌ '+e.message); }
+  finally{ msk.forEach(s=>s.remove()); btn.disabled=false; btn.textContent='Charger plus ↓'; pBusy=false; }
+});
+
+// MODAL
+function openModal(v){
+  $('mThumb').src=v.cover||''; $('mTitle').textContent=v.title||'Vidéo TikTok';
+  $('mAuthor').textContent='@'+(v.author?.unique_id||pUser);
+  $('mDls').innerHTML=[
+    ['🎥','Vidéo HD','1080p · Avec son',v.play],
+    ['📱','Vidéo SD','720p · Léger',v.play],
+    ['🎵','Audio MP3','Son uniquement',v.music||v.play],
+    ['✨','Sans filigrane','HD · Propre',v.wmplay||v.play],
+  ].map(([ico,lbl,sub,lnk])=>`<button class="mdl" onclick="dlUrl('${lnk}')"><div class="mdi">${ico}</div><div><div class="mdll">${lbl}</div><div class="mdls2">${sub}</div></div></button>`).join('');
+  $('mStats').innerHTML=`<span>❤️ <strong>${fmt(v.digg_count)}</strong></span><span>💬 <strong>${fmt(v.comment_count)}</strong></span><span>▶️ <strong>${fmt(v.play_count)}</strong> vues</span>${v.duration?`<span>⏱ ${fmtd(v.duration)}</span>`:''}`;
+  $('modal').style.display='block'; document.body.style.overflow='hidden';
+}
+function closeModal(){ $('modal').style.display='none'; document.body.style.overflow=''; }
+$('mClose').addEventListener('click',closeModal);
+$('mdrop').addEventListener('click',e=>{ if(e.target.id==='mdrop') closeModal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>
